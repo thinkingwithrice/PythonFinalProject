@@ -1,3 +1,5 @@
+# Ideas for shapes ; circle, triangle, hexagon, rhombus
+
 add_library('sound')
 add_library('PostFX')
 
@@ -5,35 +7,45 @@ class player(object) :
     def __init__(self) :
         self.xPosChar = 0
         self.yPosChar = 0
-        self.xSpeedChar = 0
-        self.ySpeedChar = 0
-        self.speedMaxChar = 3
+        self.speedChar = 3
 
     def movement(self) :
-        if keyList["W"] == True and self.ySpeedChar != self.speedMaxChar :
-            self.ySpeedChar += 0.1
-        
-        if keyList["W"] == False and self.ySpeedChar >= 0 :
-            self.ySpeedChar -= 0.1
-
-        if keyList["S"] == True and self.ySpeedChar != self.speedMaxChar :
-            self.ySpeedChar -= 0.1
-        
-        if keyList["S"] == False and self.ySpeedChar <= 0 :
-            self.ySpeedChar += 0.1
+        if keyList["W"] == True :
+            self.yPosChar -= self.speedChar
             
-        self.yPosChar += self.ySpeedChar
+        if keyList["A"] == True :
+            self.xPosChar -= self.speedChar
+            
+        if keyList["S"] == True :
+            self.yPosChar += self.speedChar
+            
+        if keyList["D"] == True :
+            self.xPosChar += self.speedChar
+            
+        
+    
     def renderChar(self) :
         pushMatrix()
         translate(self.xPosChar, self.yPosChar)
-        square(20, 20, 10)
+        square(20, 200, 20)
         popMatrix()
+
+class renderingEngine() :
+    def __init__(self) :
+        return
+    
+    def updateObjects(self) :
+        playerList[0].movement()
+        
+    def renderObjects(self) :
+        playerList[0].renderChar()
         
 #--------------------------------------------------------------------------------------------
 
 keyList = {"W" : False, "A" : False, "S" : False, "D" : False}
 playerList = []
 enemyList = []
+engine = renderingEngine()
 
 #--------------------------------------------------------------------------------------------
 
@@ -46,11 +58,12 @@ def draw() :
     if len(playerList) == 0 :
         print(keyList)
         playerList.append(player())
+        
+    engine.updateObjects()
+    engine.renderObjects()
     
-    for i in playerList :
-        i.movement()
-        i.renderChar()
-    print(playerList[0].ySpeedChar)
+    
+
 
 #--------------------------------------------------------------------------------------------
 
