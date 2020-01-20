@@ -174,9 +174,10 @@ class cameraPlayer() :
 #--------------------------------------------------------------------------------------------
 
 class weapon() :
-    def __init__(self, weaponCool, weaponDmg) :
+    def __init__(self, weaponCool, weaponMaxCool, weaponDmg) :
         self.weaponState = 1
         self.weaponCool = weaponCool
+        self.weaponMaxCool = weaponMaxCool
         self.weaponDmg = weaponDmg
         self.weaponDir = playerList[0].dirChar
         
@@ -194,7 +195,12 @@ class weapon() :
     
     def shooting(self) :
         if keyList["LeftMouse"] == True and self.weaponCool == 0 :
-            bulletList.append(bullet())
+            bulletList.append(bullet(self.weaponDir))
+            self.weaponCool = self.weaponMaxCool
+    
+    def update(self) :
+        if self.weaponCool > 0 :
+            self.weaponCool -= 1
     
     def render(self) :
         pushMatrix()
@@ -207,14 +213,31 @@ class weapon() :
         if self.weaponCool > 0 :
             self.weaponCool -= 1
             
-# class bullet() :
-#     def __init__(self) :
-#         self.dirBullet = dirBullet
+class bullet() :
+    def __init__(self, dirBullet) :
+        self.dirBullet = dirBullet
+        self.xPosBullet = playerList[0].xPosChar
+        self.yPosBullet = playerList[0].yPosChar
+        self.speedBullet = 4
         
-#     def hitReg(self) :
-#         for e in enemyList :
-#             if e.
-
+    def movement(self) :
+        self.xPosBullet += (self.speedBullet * cos(self.dirBullet) * -1)
+        self.yPosBullet += (self.speedBullet * sin(self.dirBullet) * -1)
+    
+    def update(self) :
+        if self.xPosBullet > width or self.xPosBullet < 0 or self.yPosBullet > height or self.yPosBullet < 0 :
+            bulletList.remove(self)
+    
+    def render(self) :
+        pushMatrix()
+        translate(self.xPosBullet - cameraList[0].xPosCam, self.yPosBullet - cameraList[0].yPosCam)
+        ellipse(0, 0, 5, 5)
+        popMatrix()
+    
+    def hitReg(self) :
+        # for e in enemyList :
+        #     if e.
+        return
 #--------------------------------------------------------------------------------------------
 
 class renderingEngine() :
@@ -235,12 +258,18 @@ class renderingEngine() :
             playerList[0].movement()
             playerList[0].update()
             temp.movement()
+            temp.shooting()
+            temp.update()
+            
             cameraList[0].movement()
             
             for e in enemyList :
                 e.movement()
                 e.hitbox()
                 e.update()
+            for b in bulletList :
+                b.movement()
+                b.update()
             
     
     def renderEnvironment(self) :
@@ -249,8 +278,11 @@ class renderingEngine() :
     def renderObjects(self) :
         global temp
         if gameState == True :
-            playerList[0].render()
+            for b in bulletList :
+                b.render()
             temp.render()
+            playerList[0].render()
+            
             for e in enemyList :
                 e.render()
     
@@ -280,9 +312,10 @@ def setup() :
     fx = PostFX(this)
     fx.preload(BloomPass)
     fx.preload(RGBSplitPass)
+    fx.preload(VignettePass)
     playerList.append(player())
     enemyList.append(enemy())
-    temp = weapon(1, 1)
+    temp = weapon(1, 30, 1)
     
 
 #--------------------------------------------------------------------------------------------
