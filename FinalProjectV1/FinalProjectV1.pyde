@@ -43,9 +43,9 @@ class player() :
             self.frictionChar = 1
 
         if keyList["W"] == False and keyList["S"] == False :
-            self.ySpeedChar /= 1.16
+            self.ySpeedChar /= 1.17
         if keyList["A"] == False and keyList["D"] == False :
-            self.xSpeedChar /= 1.16
+            self.xSpeedChar /= 1.17
         
         if self.xPosChar < 350 :
             self.xPosChar = 350
@@ -69,12 +69,8 @@ class player() :
             self.hurtCoolChar = 60
         if playerList[0].hPChar < 1 :
             gameState = False
-            print("test")
-
-        
-        print(self.hPChar)
-            
-        # print(self.xPosChar, self.yPosChar)
+        # print(self.hPChar)
+        # print(self.dashCoolChar)
 
     def render(self) :
         pushMatrix()
@@ -87,6 +83,10 @@ class player() :
 
 class enemy() :
     def __init__(self) :
+        self.hPEne = 2
+        self.hurtEne = 0
+        self.hurtCoolEne = 60
+        
         self.xPosEne = width / 2
         self.yPosEne = height / 2
         self.dirEne = 0
@@ -103,14 +103,10 @@ class enemy() :
             self.xPosEne += self.speedEne * cos(self.dirEne) * -1
         if (playerList[0].yPosChar - cameraList[0].yPosCam) - self.yPosEne > 26 or (playerList[0].yPosChar - cameraList[0].yPosCam) - self.yPosEne < -26:
             self.yPosEne += self.speedEne * sin(self.dirEne) * -1
-        # print(self.xPosEne, self.yPosEne, playerList[0].xPosChar, playerList[0].yPosChar)
-        
-        # print(self.xPosEne, self.yPosEne, cameraList[0].xPosCam, cameraList[0].yPosCam)
-        # print(playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam), playerList[0].yPosChar - (self.yPosEne + cameraList[0].yPosCam))
     
     def hitbox(self) :
-        if playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) < 28 and playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) > -28 :
-            if playerList[0].yPosChar - (self.yPosEne + cameraList[0].yPosCam) < 28 and playerList[0].yPosChar - (self.yPosEne + cameraList[0].yPosCam) > -28 :
+        if playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) < 28 and playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) > -28 and playerList[0].dashCoolChar < 100 :
+            if playerList[0].yPosChar - (self.yPosEne + cameraList[0].yPosCam) < 28 and playerList[0].yPosChar - (self.yPosEne + cameraList[0].yPosCam) > -28 and playerList[0].dashCoolChar < 100 :
                 engine.hitDetectTemp = 50
                 playerList[0].hurtChar = 1
             else :
@@ -119,7 +115,23 @@ class enemy() :
         else :
             engine.hitDetectTemp = 200
             playerList[0].hurtChar = 0
-
+            
+        if playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) < 28 and playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) > -28 and playerList[0].dashCoolChar > 90 and self.hurtCoolEne == 0 :
+            if playerList[0].yPosChar - (self.yPosEne + cameraList[0].yPosCam) < 28 and playerList[0].yPosChar - (self.yPosEne + cameraList[0].yPosCam) > -28 and playerList[0].dashCoolChar > 90 and self.hurtCoolEne == 0 :
+                self.hPEne -= 1
+                self.hurtCoolEne = 60
+    
+    def update(self) :
+        if self.hPEne < 1 :
+            enemyList.remove(self)
+        
+        if self.hurtEne == 1 :
+            self.hPEne -= 1
+            
+        if self.hurtCoolEne > 0 :
+            self.hurtCoolEne -= 1
+        
+        print(self.hurtCoolEne)
 
     def render(self) :
         pushMatrix()
@@ -152,22 +164,35 @@ class cameraPlayer() :
             self.xPosCam -= playerList[0].xSpeedChar * playerList[0].frictionChar
             self.movingCam = 1
 
-        if keyList["Space"] == True and playerList[0].dashCoolChar == 119 and self.movingCam == 1 :
-            engine.blurPass = 10
+        if keyList["Space"] == True and playerList[0].dashCoolChar == 119 :
+            engine.rgbPass = 100
+            engine.blurPass = 15
+            
         
         # print(playerList[0].dashCoolChar)
+
+#--------------------------------------------------------------------------------------------
+
+class weapon() :
+    def __init__(self, weaponCool) :
+        self.weaponState = 1
+        self.weaponCool = weaponCool
+        
 
 #--------------------------------------------------------------------------------------------
 
 class renderingEngine() :
     def __init__(self) :
         self.blurPass = 0
+        self.rgbPass = 25
         self.hitDetectTemp = 200
         
     def engineVars(self) :
         if self.blurPass > 0 :
             self.blurPass -= 1
-        print(gameState)
+        if self.rgbPass > 25 :
+            self.rgbPass -= 1
+        # print(gameState)
     
     def updateObjects(self) :
         if gameState == True :
@@ -175,9 +200,11 @@ class renderingEngine() :
             playerList[0].update()
         
             cameraList[0].movement()
-        
-            enemyList[0].movement()
-            enemyList[0].hitbox()
+            
+            for e in enemyList :
+                e.movement()
+                e.hitbox()
+                e.update()
             
     
     def renderEnvironment(self) :
@@ -186,16 +213,19 @@ class renderingEngine() :
     def renderObjects(self) :
         if gameState == True :
             playerList[0].render()
-            enemyList[0].render()
+            
+            for e in enemyList :
+                e.render()
     
     def postProcessing(self) :
-        fx.render().vignette(0.55, 0.55).rgbSplit(25).compose()
+        fx.render().vignette(0.55, 0.55).rgbSplit(self.rgbPass).compose()
         fx.render().blur(self.blurPass, self.blurPass).compose()
         
 #--------------------------------------------------------------------------------------------
 
 keyList = {"W" : False, "A" : False, "S" : False, "D" : False, "Space" : False}
 playerList = []
+weaponList = []
 enemyList = []
 cameraList = []
 engine = renderingEngine()
