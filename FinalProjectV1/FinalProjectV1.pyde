@@ -151,16 +151,16 @@ class cameraPlayer() :
     def movement(self) :
         self.movingCam = 0
         
-        if keyList["W"] == True and playerList[0].yPosChar == 260 :
+        if playerList[0].yPosChar == 260 and playerList[0].ySpeedChar != 0 :
             self.yPosCam -= playerList[0].ySpeedChar * playerList[0].frictionChar
             self.movingCam = 1
-        if keyList["A"] == True and playerList[0].xPosChar == 350 :
+        if playerList[0].xPosChar == 350 and playerList[0].xSpeedChar != 0 :
             self.xPosCam -= playerList[0].xSpeedChar * playerList[0].frictionChar
             self.movingCam = 1
-        if keyList["S"] == True and playerList[0].yPosChar == 460 :
+        if playerList[0].yPosChar == 460 and playerList[0].ySpeedChar != 0 :
             self.yPosCam -= playerList[0].ySpeedChar * playerList[0].frictionChar
             self.movingCam = 1
-        if keyList["D"] == True and playerList[0].xPosChar == 650 :
+        if playerList[0].xPosChar == 650 and playerList[0].xSpeedChar != 0 :
             self.xPosCam -= playerList[0].xSpeedChar * playerList[0].frictionChar
             self.movingCam = 1
 
@@ -174,10 +174,46 @@ class cameraPlayer() :
 #--------------------------------------------------------------------------------------------
 
 class weapon() :
-    def __init__(self, weaponCool) :
+    def __init__(self, weaponCool, weaponDmg) :
         self.weaponState = 1
         self.weaponCool = weaponCool
+        self.weaponDmg = weaponDmg
+        self.weaponDir = playerList[0].dirChar
         
+        self.xPosWeapon = playerList[0].xPosChar
+        self.yPosWeapon = playerList[0].yPosChar
+        self.xSpeedWeapon = playerList[0].xSpeedChar
+        self.ySpeedWeapon = playerList[0].ySpeedChar
+        
+    def movement(self) :
+        self.weaponDir = playerList[0].dirChar
+        self.xPosWeapon = playerList[0].xPosChar
+        self.yPosWeapon = playerList[0].yPosChar
+        self.xSpeedWeapon = playerList[0].xSpeedChar
+        self.ySpeedWeapon = playerList[0].ySpeedChar
+    
+    def shooting(self) :
+        if keyList["LeftMouse"] == True and self.weaponCool == 0 :
+            bulletList.append(bullet())
+    
+    def render(self) :
+        pushMatrix()
+        translate(self.xPosWeapon, self.yPosWeapon)
+        rotate(self.weaponDir)
+        rect(0, 2, -28, -4)
+        popMatrix()
+    
+    def update(self) :
+        if self.weaponCool > 0 :
+            self.weaponCool -= 1
+            
+# class bullet() :
+#     def __init__(self) :
+#         self.dirBullet = dirBullet
+        
+#     def hitReg(self) :
+#         for e in enemyList :
+#             if e.
 
 #--------------------------------------------------------------------------------------------
 
@@ -198,7 +234,7 @@ class renderingEngine() :
         if gameState == True :
             playerList[0].movement()
             playerList[0].update()
-        
+            temp.movement()
             cameraList[0].movement()
             
             for e in enemyList :
@@ -211,21 +247,24 @@ class renderingEngine() :
         background(self.hitDetectTemp)
         
     def renderObjects(self) :
+        global temp
         if gameState == True :
             playerList[0].render()
-            
+            temp.render()
             for e in enemyList :
                 e.render()
     
     def postProcessing(self) :
-        fx.render().vignette(0.55, 0.55).rgbSplit(self.rgbPass).compose()
-        fx.render().blur(self.blurPass, self.blurPass).compose()
+        # fx.render().vignette(0.55, 0.55).rgbSplit(self.rgbPass).compose()
+        # fx.render().blur(self.blurPass, self.blurPass).compose()
+        return
         
 #--------------------------------------------------------------------------------------------
 
-keyList = {"W" : False, "A" : False, "S" : False, "D" : False, "Space" : False}
+keyList = {"W" : False, "A" : False, "S" : False, "D" : False, "Space" : False, "LeftMouse" : False}
 playerList = []
 weaponList = []
+bulletList = []
 enemyList = []
 cameraList = []
 engine = renderingEngine()
@@ -234,7 +273,7 @@ gameState = True
 #--------------------------------------------------------------------------------------------
 
 def setup() :
-    global fx
+    global fx, temp
     size(1000, 720, P2D)
     smooth(4)
     
@@ -243,15 +282,16 @@ def setup() :
     fx.preload(RGBSplitPass)
     playerList.append(player())
     enemyList.append(enemy())
+    temp = weapon(1, 1)
+    
 
 #--------------------------------------------------------------------------------------------
 
 def draw() :
-    # if len(playerList) == 0 :
-    #     playerList.append(player())
-        
+    global temp
     if len(cameraList) == 0 :
         cameraList.append(cameraPlayer())
+    
     
     # print(playerList[0].dashCoolChar)
     engine.updateObjects()
@@ -285,3 +325,11 @@ def keyReleased() :
         keyList["D"] = False
     if key == " " :
         keyList["Space"] = False
+
+def mousePressed() :
+    if mouseButton == LEFT :
+        keyList["LeftMouse"] = True
+
+def mouseReleased() :
+    if mouseButton == LEFT :
+        keyList["LeftMouse"] = False
