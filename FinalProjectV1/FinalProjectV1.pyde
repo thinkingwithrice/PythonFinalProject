@@ -81,14 +81,14 @@ class player() :
 
 class enemy() :
     def __init__(self) :
-        self.hPEne = 2
+        self.hPEne = 4
         self.hurtEne = 0
         self.hurtCoolEne = 60
         
         self.xPosEne = width / 2
         self.yPosEne = height / 2
         self.dirEne = 0
-        self.speedEne = 1
+        self.speedEne = 4
         self.distX = 0
         self.distY = 0
         
@@ -96,6 +96,11 @@ class enemy() :
         self.dirEne = atan2((self.yPosEne + cameraList[0].yPosCam) - playerList[0].yPosChar, (self.xPosEne + cameraList[0].xPosCam) - playerList[0].xPosChar)
         self.distX = (cameraList[0].xPosCam - playerList[0].xPosChar) - self.xPosEne
         self.distY = (playerList[0].yPosChar - cameraList[0].yPosCam) - self.yPosEne
+        
+        if (playerList[0].xPosChar - cameraList[0].xPosCam) - self.xPosEne > 26 or (playerList[0].xPosChar - cameraList[0].xPosCam) - self.xPosEne < -26 :
+            self.xPosEne += self.speedEne * cos(self.dirEne) * -1
+        if (playerList[0].yPosChar - cameraList[0].yPosCam) - self.yPosEne > 26 or (playerList[0].yPosChar - cameraList[0].yPosCam) - self.yPosEne < -26:
+            self.yPosEne += self.speedEne * sin(self.dirEne) * -1
     
     def hitbox(self) :
         if playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) < 28 and playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) > -28 and playerList[0].dashCoolChar < 100 :
@@ -294,8 +299,8 @@ class renderingEngine() :
                 e.render()
     
     def postProcessing(self) :
-        fx.render().vignette(0.55, 0.55).rgbSplit(self.rgbPass).compose()
-        fx.render().blur(self.blurPass, self.blurPass).compose()
+        # fx.render().vignette(0.55, 0.55).rgbSplit(self.rgbPass).compose()
+        # fx.render().blur(self.blurPass, self.blurPass).compose()
         return
         
 #--------------------------------------------------------------------------------------------
@@ -323,6 +328,7 @@ def setup() :
     playerList.append(player())
     enemyList.append(enemy())
     temp = weapon(1, 30, 1)
+    temp2 = weapon(1, 2, 1)
     
 
 #--------------------------------------------------------------------------------------------
