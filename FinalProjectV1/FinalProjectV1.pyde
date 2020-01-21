@@ -80,15 +80,15 @@ class player() :
 #--------------------------------------------------------------------------------------------
 
 class enemy() :
-    def __init__(self) :
+    def __init__(self, speed) :
         self.hPEne = 4
         self.hurtEne = 0
         self.hurtCoolEne = 60
         
-        self.xPosEne = width / 2
-        self.yPosEne = height / 2
+        self.xPosEne = int(random(0, width))
+        self.yPosEne = 0
         self.dirEne = 0
-        self.speedEne = 4
+        self.speedEne = speed
         self.distX = 0
         self.distY = 0
         
@@ -168,16 +168,17 @@ class cameraPlayer() :
             engine.rgbPass = 100
             engine.blurPass = 15
         
-        print(self.xPosCam, self.yPosCam, self.movingCam, playerList[0].xSpeedChar, playerList[0].ySpeedChar)
+        # print(self.xPosCam, self.yPosCam, self.movingCam, playerList[0].xSpeedChar, playerList[0].ySpeedChar)
 
 #--------------------------------------------------------------------------------------------
 
 class weapon() :
-    def __init__(self, weaponCool, weaponMaxCool, weaponDmg) :
-        self.weaponState = 1
+    def __init__(self, weaponCool, weaponMaxCool, weaponDmg, bulletSpeed) :
+        self.weaponSlot = 0
         self.weaponCool = weaponCool
         self.weaponMaxCool = weaponMaxCool
         self.weaponDmg = weaponDmg
+        self.bulletSpeed = bulletSpeed
         
     def movement(self) :
         self.weaponDir = playerList[0].dirChar
@@ -185,15 +186,19 @@ class weapon() :
         self.yPosWeapon = playerList[0].yPosChar
         self.xSpeedWeapon = playerList[0].xSpeedChar
         self.ySpeedWeapon = playerList[0].ySpeedChar
+        
+        
     
     def shooting(self) :
         if keyList["LeftMouse"] == True and self.weaponCool == 0 :
-            bulletList.append(bullet(self.weaponDir))
+            bulletList.append(bullet(self.weaponDir, self.weaponDmg, self.bulletSpeed))
             self.weaponCool = self.weaponMaxCool
     
     def update(self) :
         if self.weaponCool > 0 :
             self.weaponCool -= 1
+        self.weaponSlot = weaponList.index(self)
+        print(self.weaponSlot)
     
     def render(self) :
         pushMatrix()
@@ -201,26 +206,23 @@ class weapon() :
         rotate(self.weaponDir)
         rect(0, 2, -28, -4)
         popMatrix()
-    
-    def update(self) :
-        if self.weaponCool > 0 :
-            self.weaponCool -= 1
 
 #--------------------------------------------------------------------------------------------
             
 class bullet() :
-    def __init__(self, dirBullet) :
+    def __init__(self, dirBullet, bulletSpeed, weaponDmg) :
         self.dirBullet = dirBullet
         self.xPosBullet = playerList[0].xPosChar
         self.yPosBullet = playerList[0].yPosChar
-        self.speedBullet = 10
+        self.speedBullet = bulletSpeed
         self.bulletAliveTime = 180
+        self.dmgBullet = weaponDmg
         
     def movement(self) :
         if cameraList[0].movingXCam == 1 :
-            self.xPosBullet -= playerList[0].xSpeedChar
+            self.xPosBullet -= playerList[0].xSpeedChar * playerList[0].frictionChar
         if cameraList[0].movingYCam == 1 :
-            self.yPosBullet -= playerList[0].ySpeedChar
+            self.yPosBullet -= playerList[0].ySpeedChar * playerList[0].frictionChar
         
         self.xPosBullet += (self.speedBullet * cos(self.dirBullet) * -1)
         self.yPosBullet += (self.speedBullet * sin(self.dirBullet) * -1)
@@ -228,10 +230,10 @@ class bullet() :
     def hitReg(self) :
         for e in enemyList :
             if e.xPosEne - 15 < self.xPosBullet - cameraList[0].xPosCam and e.xPosEne + 15 > self.xPosBullet - cameraList[0].xPosCam :
-                if e.yPosEne - 15 < self.yPosBullet - cameraList[0].yPosCam and e.yPosEne + 15 > self.yPosBullet - cameraList[0].yPosCam:
-                    e.hPEne -= 1
+                if e.yPosEne - 15 < self.yPosBullet - cameraList[0].yPosCam and e.yPosEne + 15 > self.yPosBullet - cameraList[0].yPosCam and self.bulletAliveTime > 0 :
                     self.bulletAliveTime = 0
-    
+                    e.hPEne -= self.dmgBullet
+                    
     def update(self) :
         if self.xPosBullet > width or self.xPosBullet < 0 or self.yPosBullet > height or self.yPosBullet < 0 :
             bulletList.remove(self)
@@ -246,8 +248,8 @@ class bullet() :
         translate(self.xPosBullet, self.yPosBullet)
         rotate(self.dirBullet)
         translate(-30, 0)
-        
         ellipse(0, 0, 5, 5)
+        
         popMatrix()
 
 #--------------------------------------------------------------------------------------------
@@ -269,9 +271,10 @@ class renderingEngine() :
             playerList[0].movement()
             playerList[0].update()
             
-            temp.movement()
-            temp.shooting()
-            temp.update()
+            for w in weaponList :
+                w.movement()
+                w.shooting()
+                w.update()
             
             cameraList[0].movement()
             
@@ -288,11 +291,12 @@ class renderingEngine() :
         background(self.hitDetectTemp)
         
     def renderObjects(self) :
-        global temp
         if gameState == True :
             for b in bulletList :
                 b.render()
-            temp.render()
+            for w in weaponList :
+                w.render()
+                
             playerList[0].render()
             
             for e in enemyList :
@@ -317,7 +321,7 @@ gameState = True
 #--------------------------------------------------------------------------------------------
 
 def setup() :
-    global fx, temp
+    global fx
     size(1000, 720, P2D)
     smooth(4)
     
@@ -326,9 +330,10 @@ def setup() :
     fx.preload(RGBSplitPass)
     fx.preload(VignettePass)
     playerList.append(player())
-    enemyList.append(enemy())
-    temp = weapon(1, 30, 1)
-    temp2 = weapon(1, 2, 1)
+    for i in range(20) :
+        enemyList.append(enemy(int(random(1, 4))))
+    weaponList.append(weapon(1, 20, 8, 1))
+    # temp2 = weapon(1, 2, 1)
     
 
 #--------------------------------------------------------------------------------------------
