@@ -69,8 +69,6 @@ class player() :
             self.hurtCoolChar = 60
         if playerList[0].hPChar < 1 :
             gameState = False
-        # print(self.hPChar)
-        # print(self.dashCoolChar)
 
     def render(self) :
         pushMatrix()
@@ -98,11 +96,6 @@ class enemy() :
         self.dirEne = atan2((self.yPosEne + cameraList[0].yPosCam) - playerList[0].yPosChar, (self.xPosEne + cameraList[0].xPosCam) - playerList[0].xPosChar)
         self.distX = (cameraList[0].xPosCam - playerList[0].xPosChar) - self.xPosEne
         self.distY = (playerList[0].yPosChar - cameraList[0].yPosCam) - self.yPosEne
-        
-        if (playerList[0].xPosChar - cameraList[0].xPosCam) - self.xPosEne > 26 or (playerList[0].xPosChar - cameraList[0].xPosCam) - self.xPosEne < -26 :
-            self.xPosEne += self.speedEne * cos(self.dirEne) * -1
-        if (playerList[0].yPosChar - cameraList[0].yPosCam) - self.yPosEne > 26 or (playerList[0].yPosChar - cameraList[0].yPosCam) - self.yPosEne < -26:
-            self.yPosEne += self.speedEne * sin(self.dirEne) * -1
     
     def hitbox(self) :
         if playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) < 28 and playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) > -28 and playerList[0].dashCoolChar < 100 :
@@ -130,8 +123,6 @@ class enemy() :
             
         if self.hurtCoolEne > 0 :
             self.hurtCoolEne -= 1
-        
-        print(self.hurtCoolEne)
 
     def render(self) :
         pushMatrix()
@@ -147,29 +138,32 @@ class cameraPlayer() :
         self.xPosCam = 0
         self.yPosCam = 0
         self.movingCam = 0
+        self.movingXCam = 0
+        self.movingYCam = 0
     
     def movement(self) :
         self.movingCam = 0
+        self.movingXCam = 0
+        self.movingYCam = 0
         
-        if playerList[0].yPosChar == 260 and playerList[0].ySpeedChar != 0 :
+        if playerList[0].yPosChar == 260 and playerList[0].ySpeedChar < -0.01 :
             self.yPosCam -= playerList[0].ySpeedChar * playerList[0].frictionChar
-            self.movingCam = 1
-        if playerList[0].xPosChar == 350 and playerList[0].xSpeedChar != 0 :
+            self.movingYCam = 1
+        if playerList[0].xPosChar == 350 and playerList[0].xSpeedChar < -0.01 :
             self.xPosCam -= playerList[0].xSpeedChar * playerList[0].frictionChar
-            self.movingCam = 1
-        if playerList[0].yPosChar == 460 and playerList[0].ySpeedChar != 0 :
+            self.movingXCam = 1
+        if playerList[0].yPosChar == 460 and playerList[0].ySpeedChar > 0.01 :
             self.yPosCam -= playerList[0].ySpeedChar * playerList[0].frictionChar
-            self.movingCam = 1
-        if playerList[0].xPosChar == 650 and playerList[0].xSpeedChar != 0 :
+            self.movingYCam = 1
+        if playerList[0].xPosChar == 650 and playerList[0].xSpeedChar > 0.01 :
             self.xPosCam -= playerList[0].xSpeedChar * playerList[0].frictionChar
-            self.movingCam = 1
+            self.movingXCam = 1
 
         if keyList["Space"] == True and playerList[0].dashCoolChar == 119 :
             engine.rgbPass = 100
             engine.blurPass = 15
-            
         
-        # print(playerList[0].dashCoolChar)
+        print(self.xPosCam, self.yPosCam, self.movingCam, playerList[0].xSpeedChar, playerList[0].ySpeedChar)
 
 #--------------------------------------------------------------------------------------------
 
@@ -179,12 +173,6 @@ class weapon() :
         self.weaponCool = weaponCool
         self.weaponMaxCool = weaponMaxCool
         self.weaponDmg = weaponDmg
-        self.weaponDir = playerList[0].dirChar
-        
-        self.xPosWeapon = playerList[0].xPosChar
-        self.yPosWeapon = playerList[0].yPosChar
-        self.xSpeedWeapon = playerList[0].xSpeedChar
-        self.ySpeedWeapon = playerList[0].ySpeedChar
         
     def movement(self) :
         self.weaponDir = playerList[0].dirChar
@@ -212,32 +200,51 @@ class weapon() :
     def update(self) :
         if self.weaponCool > 0 :
             self.weaponCool -= 1
+
+#--------------------------------------------------------------------------------------------
             
 class bullet() :
     def __init__(self, dirBullet) :
         self.dirBullet = dirBullet
         self.xPosBullet = playerList[0].xPosChar
         self.yPosBullet = playerList[0].yPosChar
-        self.speedBullet = 4
+        self.speedBullet = 10
+        self.bulletAliveTime = 180
         
     def movement(self) :
+        if cameraList[0].movingXCam == 1 :
+            self.xPosBullet -= playerList[0].xSpeedChar
+        if cameraList[0].movingYCam == 1 :
+            self.yPosBullet -= playerList[0].ySpeedChar
+        
         self.xPosBullet += (self.speedBullet * cos(self.dirBullet) * -1)
         self.yPosBullet += (self.speedBullet * sin(self.dirBullet) * -1)
+        
+    def hitReg(self) :
+        for e in enemyList :
+            if e.xPosEne - 15 < self.xPosBullet - cameraList[0].xPosCam and e.xPosEne + 15 > self.xPosBullet - cameraList[0].xPosCam :
+                if e.yPosEne - 15 < self.yPosBullet - cameraList[0].yPosCam and e.yPosEne + 15 > self.yPosBullet - cameraList[0].yPosCam:
+                    e.hPEne -= 1
+                    self.bulletAliveTime = 0
     
     def update(self) :
         if self.xPosBullet > width or self.xPosBullet < 0 or self.yPosBullet > height or self.yPosBullet < 0 :
             bulletList.remove(self)
+        if self.bulletAliveTime > 0 :
+            self.bulletAliveTime -= 1
+        else :
+            bulletList.remove(self)
     
     def render(self) :
         pushMatrix()
-        translate(self.xPosBullet - cameraList[0].xPosCam, self.yPosBullet - cameraList[0].yPosCam)
+        
+        translate(self.xPosBullet, self.yPosBullet)
+        rotate(self.dirBullet)
+        translate(-30, 0)
+        
         ellipse(0, 0, 5, 5)
         popMatrix()
-    
-    def hitReg(self) :
-        # for e in enemyList :
-        #     if e.
-        return
+
 #--------------------------------------------------------------------------------------------
 
 class renderingEngine() :
@@ -251,12 +258,12 @@ class renderingEngine() :
             self.blurPass -= 1
         if self.rgbPass > 25 :
             self.rgbPass -= 1
-        # print(gameState)
     
     def updateObjects(self) :
         if gameState == True :
             playerList[0].movement()
             playerList[0].update()
+            
             temp.movement()
             temp.shooting()
             temp.update()
@@ -269,8 +276,8 @@ class renderingEngine() :
                 e.update()
             for b in bulletList :
                 b.movement()
+                b.hitReg()
                 b.update()
-            
     
     def renderEnvironment(self) :
         background(self.hitDetectTemp)
@@ -287,8 +294,8 @@ class renderingEngine() :
                 e.render()
     
     def postProcessing(self) :
-        # fx.render().vignette(0.55, 0.55).rgbSplit(self.rgbPass).compose()
-        # fx.render().blur(self.blurPass, self.blurPass).compose()
+        fx.render().vignette(0.55, 0.55).rgbSplit(self.rgbPass).compose()
+        fx.render().blur(self.blurPass, self.blurPass).compose()
         return
         
 #--------------------------------------------------------------------------------------------
