@@ -84,6 +84,7 @@ class enemy() :
         self.hPEne = 4
         self.hurtEne = 0
         self.hurtCoolEne = 60
+        self.colour = 255
         
         self.xPosEne = int(random(0, width))
         self.yPosEne = 0
@@ -91,33 +92,46 @@ class enemy() :
         self.speedEne = speed
         self.distX = 0
         self.distY = 0
+        self.distEne = 0
         
     def movement(self) :
         self.dirEne = atan2((self.yPosEne + cameraList[0].yPosCam) - playerList[0].yPosChar, (self.xPosEne + cameraList[0].xPosCam) - playerList[0].xPosChar)
         self.distX = (cameraList[0].xPosCam - playerList[0].xPosChar) - self.xPosEne
         self.distY = (playerList[0].yPosChar - cameraList[0].yPosCam) - self.yPosEne
         
+
+        
         if (playerList[0].xPosChar - cameraList[0].xPosCam) - self.xPosEne > 26 or (playerList[0].xPosChar - cameraList[0].xPosCam) - self.xPosEne < -26 :
             self.xPosEne += self.speedEne * cos(self.dirEne) * -1
         if (playerList[0].yPosChar - cameraList[0].yPosCam) - self.yPosEne > 26 or (playerList[0].yPosChar - cameraList[0].yPosCam) - self.yPosEne < -26:
             self.yPosEne += self.speedEne * sin(self.dirEne) * -1
+        
+        for e in enemyList :
+            if dist(cameraList[0].xPosCam - self.xPosEne, cameraList[0].yPosCam - self.yPosEne, cameraList[0].xPosCam - e.xPosEne, cameraList[0].yPosCam - e.yPosEne) < 35 :
+                if e != self :
+                    self.xPosEne += 1
+                else :
+                    return
+                
     
     def hitbox(self) :
-        if playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) < 28 and playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) > -28 and playerList[0].dashCoolChar < 100 :
-            if playerList[0].yPosChar - (self.yPosEne + cameraList[0].yPosCam) < 28 and playerList[0].yPosChar - (self.yPosEne + cameraList[0].yPosCam) > -28 and playerList[0].dashCoolChar < 100 :
-                engine.hitDetectTemp = 50
-                playerList[0].hurtChar = 1
-            else :
-                engine.hitDetectTemp = 200
-                playerList[0].hurtChar = 0
+        if dist(playerList[0].xPosChar, playerList[0].yPosChar, self.xPosEne + cameraList[0].xPosCam, self.yPosEne + cameraList[0].yPosCam) < 30 and playerList[0].dashCoolChar < 100 :
+            engine.hitDetectTemp = 50
+            playerList[0].hurtChar = 1
         else :
             engine.hitDetectTemp = 200
             playerList[0].hurtChar = 0
+        
+        print(dist(playerList[0].xPosChar, playerList[0].yPosChar, self.xPosEne + cameraList[0].xPosCam, self.yPosEne + cameraList[0].yPosCam))
             
-        if playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) < 28 and playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) > -28 and playerList[0].dashCoolChar > 90 and self.hurtCoolEne == 0 :
-            if playerList[0].yPosChar - (self.yPosEne + cameraList[0].yPosCam) < 28 and playerList[0].yPosChar - (self.yPosEne + cameraList[0].yPosCam) > -28 and playerList[0].dashCoolChar > 90 and self.hurtCoolEne == 0 :
+        if playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) < 28 and playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) > -28 and playerList[0].dashCoolChar > 100 and self.hurtCoolEne == 0 :
+            if playerList[0].yPosChar - (self.yPosEne + cameraList[0].yPosCam) < 28 and playerList[0].yPosChar - (self.yPosEne + cameraList[0].yPosCam) > -28 and playerList[0].dashCoolChar > 100 and self.hurtCoolEne == 0 :
                 self.hPEne -= 1
                 self.hurtCoolEne = 60
+        
+        if self.hurtCoolEne > 50 :
+            self.colour = 150
+            
     
     def update(self) :
         if self.hPEne < 1 :
@@ -128,9 +142,13 @@ class enemy() :
             
         if self.hurtCoolEne > 0 :
             self.hurtCoolEne -= 1
+        
+        if self.colour < 255 :
+            self.colour += 1
 
     def render(self) :
         pushMatrix()
+        fill(self.colour)
         translate(cameraList[0].xPosCam + self.xPosEne, cameraList[0].yPosCam + self.yPosEne)
         rotate(self.dirEne)
         square(-15, -15, 30)
@@ -191,14 +209,14 @@ class weapon() :
     
     def shooting(self) :
         if keyList["LeftMouse"] == True and self.weaponCool == 0 :
-            bulletList.append(bullet(self.weaponDir, self.weaponDmg, self.bulletSpeed))
+            bulletList.append(bulletPlayer(self.weaponDir, self.weaponDmg, self.bulletSpeed))
             self.weaponCool = self.weaponMaxCool
     
     def update(self) :
         if self.weaponCool > 0 :
             self.weaponCool -= 1
         self.weaponSlot = weaponList.index(self)
-        print(self.weaponSlot)
+        # print(self.weaponSlot)
     
     def render(self) :
         pushMatrix()
@@ -209,7 +227,7 @@ class weapon() :
 
 #--------------------------------------------------------------------------------------------
             
-class bullet() :
+class bulletPlayer() :
     def __init__(self, dirBullet, bulletSpeed, weaponDmg) :
         self.dirBullet = dirBullet
         self.xPosBullet = playerList[0].xPosChar
@@ -233,6 +251,8 @@ class bullet() :
                 if e.yPosEne - 15 < self.yPosBullet - cameraList[0].yPosCam and e.yPosEne + 15 > self.yPosBullet - cameraList[0].yPosCam and self.bulletAliveTime > 0 :
                     self.bulletAliveTime = 0
                     e.hPEne -= self.dmgBullet
+                    e.colour = 180
+                    
                     
     def update(self) :
         if self.xPosBullet > width or self.xPosBullet < 0 or self.yPosBullet > height or self.yPosBullet < 0 :
@@ -251,6 +271,8 @@ class bullet() :
         ellipse(0, 0, 5, 5)
         
         popMatrix()
+
+
 
 #--------------------------------------------------------------------------------------------
 
@@ -330,8 +352,8 @@ def setup() :
     fx.preload(RGBSplitPass)
     fx.preload(VignettePass)
     playerList.append(player())
-    for i in range(20) :
-        enemyList.append(enemy(int(random(1, 4))))
+    for i in range(3) :
+        enemyList.append(enemy(random(1, 4)))
     weaponList.append(weapon(1, 20, 8, 1))
     # temp2 = weapon(1, 2, 1)
     
