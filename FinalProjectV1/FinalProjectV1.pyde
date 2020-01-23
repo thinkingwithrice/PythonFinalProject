@@ -10,6 +10,9 @@ class player() :
         self.hPChar = 5
         self.hurtChar = 0
         self.hurtCoolChar = 60
+        self.colourR = 255
+        self.colourG = 255
+        self.colourB = 255
         
         self.dirChar = 0
         self.xPosChar = width / 2
@@ -67,11 +70,16 @@ class player() :
         if self.hurtChar == 1 and self.hurtCoolChar == 0 :
             self.hPChar -= 1
             self.hurtCoolChar = 60
+        else :
+            self.hurtChar = 0
+            
+            
         if playerList[0].hPChar < 1 :
             gameState = False
 
     def render(self) :
         pushMatrix()
+        fill(self.colourR, self.colourG, self.colourB)
         translate(self.xPosChar, self.yPosChar)
         rotate(self.dirChar)
         square(-15, -15, 30)
@@ -81,10 +89,13 @@ class player() :
 
 class enemy() :
     def __init__(self, speed) :
+        self.enemyType =
         self.hPEne = 4
         self.hurtEne = 0
         self.hurtCoolEne = 60
-        self.colour = 255
+        self.colourR = 255
+        self.colourG = 255
+        self.colourB = 255
         
         self.xPosEne = int(random(0, width))
         self.yPosEne = 0
@@ -112,26 +123,21 @@ class enemy() :
                     self.xPosEne += 1
                 else :
                     return
-                
     
     def hitbox(self) :
+    
         if dist(playerList[0].xPosChar, playerList[0].yPosChar, self.xPosEne + cameraList[0].xPosCam, self.yPosEne + cameraList[0].yPosCam) < 30 and playerList[0].dashCoolChar < 100 :
             engine.hitDetectTemp = 50
             playerList[0].hurtChar = 1
-        else :
-            engine.hitDetectTemp = 200
-            playerList[0].hurtChar = 0
+            
+        print(playerList[0].hurtChar, playerList[0].hPChar)
         
-        print(dist(playerList[0].xPosChar, playerList[0].yPosChar, self.xPosEne + cameraList[0].xPosCam, self.yPosEne + cameraList[0].yPosCam))
+        # print(dist(playerList[0].xPosChar, playerList[0].yPosChar, self.xPosEne + cameraList[0].xPosCam, self.yPosEne + cameraList[0].yPosCam))
             
         if playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) < 28 and playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) > -28 and playerList[0].dashCoolChar > 100 and self.hurtCoolEne == 0 :
             if playerList[0].yPosChar - (self.yPosEne + cameraList[0].yPosCam) < 28 and playerList[0].yPosChar - (self.yPosEne + cameraList[0].yPosCam) > -28 and playerList[0].dashCoolChar > 100 and self.hurtCoolEne == 0 :
                 self.hPEne -= 1
                 self.hurtCoolEne = 60
-        
-        if self.hurtCoolEne > 50 :
-            self.colour = 150
-            
     
     def update(self) :
         if self.hPEne < 1 :
@@ -143,12 +149,17 @@ class enemy() :
         if self.hurtCoolEne > 0 :
             self.hurtCoolEne -= 1
         
-        if self.colour < 255 :
-            self.colour += 1
+        if self.colourG < 255 and self.colourB < 255 :
+            self.colourG += 1
+            self.colourB += 1
+        
+        if self.hurtCoolEne > 50 :
+            self.colourG = 220
+            self.colourB = 220
 
     def render(self) :
         pushMatrix()
-        fill(self.colour)
+        fill(self.colourR, self.colourG, self.colourB)
         translate(cameraList[0].xPosCam + self.xPosEne, cameraList[0].yPosCam + self.yPosEne)
         rotate(self.dirEne)
         square(-15, -15, 30)
@@ -251,8 +262,8 @@ class bulletPlayer() :
                 if e.yPosEne - 15 < self.yPosBullet - cameraList[0].yPosCam and e.yPosEne + 15 > self.yPosBullet - cameraList[0].yPosCam and self.bulletAliveTime > 0 :
                     self.bulletAliveTime = 0
                     e.hPEne -= self.dmgBullet
-                    e.colour = 180
-                    
+                    e.colourG = 220
+                    e.colourB = 220
                     
     def update(self) :
         if self.xPosBullet > width or self.xPosBullet < 0 or self.yPosBullet > height or self.yPosBullet < 0 :
