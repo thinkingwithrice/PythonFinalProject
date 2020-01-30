@@ -11,7 +11,7 @@ class player() :
         self.hPChar = 4
         self.hurtChar = 0
         self.hurtCoolChar = 60
-        self.points = 0
+        self.points = 20000
         
         self.colourR = 255
         self.colourG = 255
@@ -24,9 +24,13 @@ class player() :
         self.ySpeedChar = 0
         self.maxSpeedChar = 4
         self.frictionChar = 1
-        self.dashSpeedChar = 4
+        self.dashSpeedChar = 4.2
         self.dashCoolChar = 0
         self.dashDmg = 1
+        
+        self.pointerDir = 0
+        self.generalXAreaOfEne = 0
+        self.generalYAreaOfEne = 0
 
     def movement(self) :
         self.xPosChar += self.xSpeedChar * self.frictionChar
@@ -81,6 +85,27 @@ class player() :
             if waves.waveAction == False :
                 text("'E' to advance...", width - 200, 160)
         
+        if menus.inShop == False and waves.waveAction == True :
+            self.generalXAreaOfEne = 0
+            self.generalYAreaOfEne = 0
+            
+            for e in enemyList :
+                self.generalXAreaOfEne += cameraList[0].xPosCam + e.xPosEne
+                self.generalYAreaOfEne += cameraList[0].yPosCam + e.yPosEne
+            
+            self.generalXAreaOfEne /= len(enemyList)
+            self.generalYAreaOfEne /= len(enemyList)
+
+            self.pointerDir = atan2((self.yPosChar - self.generalYAreaOfEne), (self.xPosChar - self.generalXAreaOfEne))
+            
+            pushMatrix()
+            translate(self.xPosChar, self.yPosChar)
+            rotate(self.pointerDir)
+            tint(0, 100)
+            image(pointerShape, -100, 0)
+            tint(255, 255)
+            popMatrix()
+        
         if self.hurtChar == 1 and self.hurtCoolChar == 0 :
             self.hPChar -= 1
             self.hurtCoolChar = 60
@@ -115,6 +140,7 @@ class player() :
         fill(self.colourR, self.colourG, self.colourB)
         translate(self.xPosChar, self.yPosChar)
         rotate(self.dirChar + PI/-2)
+        playerShape.resize(50, 0)
         image(playerShape, 0, 0)
         popMatrix()
 
@@ -122,7 +148,7 @@ class player() :
 
 class enemy() :
     def __init__(self, speed) :
-        self.hPEne = waves.waveNum * 1.03
+        self.hPEne = waves.waveNum * 1.15
         self.hurtEne = 0
         self.hurtCoolEne = 60
         self.shootCoolDown = 60
@@ -131,7 +157,7 @@ class enemy() :
         self.colourG = 255
         self.colourB = 255
         
-        self.xPosEne = random(cameraList[0].xPosCam, cameraList[0].yPosCam + 1000)
+        self.xPosEne = random(cameraList[0].xPosCam * -1, cameraList[0].xPosCam + 1000)
         self.yPosEne = random(-75 - cameraList[0].yPosCam, -150 - cameraList[0].yPosCam)
         self.dirEne = 0
         self.speedEne = speed
@@ -154,6 +180,7 @@ class enemy() :
             if dist(cameraList[0].xPosCam - self.xPosEne, cameraList[0].yPosCam - self.yPosEne, cameraList[0].xPosCam - e.xPosEne, cameraList[0].yPosCam - e.yPosEne) < 35 :
                 if e != self :
                     self.xPosEne += 1
+                    self.yPosEne += 1
                 else :
                     return
     
@@ -163,6 +190,7 @@ class enemy() :
             
         if playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) < 28 and playerList[0].xPosChar - (self.xPosEne + cameraList[0].xPosCam) > -28 and playerList[0].dashCoolChar > 100 and self.hurtCoolEne == 0 :
             if playerList[0].yPosChar - (self.yPosEne + cameraList[0].yPosCam) < 28 and playerList[0].yPosChar - (self.yPosEne + cameraList[0].yPosCam) > -28 and playerList[0].dashCoolChar > 100 and self.hurtCoolEne == 0 :
+                hurtSoundEne.trigger()
                 self.hPEne -= playerList[0].dashDmg
                 self.hurtCoolEne = 60
     
@@ -310,7 +338,7 @@ class waveSystem() :
         self.waveAction = False
         self.waveStart = False
         self.waveNum = 0
-        self.speed = 1.3
+        self.speed = 1.5
     
     def waveStarting(self) :
         if keyList["E"] == True and self.waveAction == False and menus.inShop == 0 :
@@ -321,7 +349,7 @@ class waveSystem() :
     
     def waveSpawn(self) :
         for i in range(int(round(self.waveNum * 1.5))) :
-            enemyList.append(enemy(self.speed))
+            enemyList.append(enemy(self.speed + float(random(0, 1))))
     
     def update(self) :
         if len(enemyList) != 0 :
@@ -389,19 +417,20 @@ class menu() :
             menuSelect.trigger()
         
         if self.inShop == True :
+            imageMode(CORNER)
             image(menuThree, 0, 0)
             if keyList["1"] == True and self.buyCool == 0 and playerList[0].points >= 3 : #Upgrading mvt. speed.
                 playerList[0].points -= 3
-                playerList[0].maxSpeedChar += 0.2
+                playerList[0].maxSpeedChar += 0.1
                 upgradeSound.trigger()
                 self.buyCool = 15
             elif keyList["1"] == True and self.buyCool == 0 and playerList[0].points < 3 :
                 declineSound.trigger()
                 self.buyCool = 15
         
-            if keyList["2"] == True and self.buyCool == 0 and playerList[0].points >= 4 and weap.weaponMaxCool > 4 : #Upgrading atk. speed.
+            if keyList["2"] == True and self.buyCool == 0 and playerList[0].points >= 4 and weap.weaponMaxCool > 7 : #Upgrading atk. speed.
                 playerList[0].points -= 4
-                weap.weaponMaxCool -= 2
+                weap.weaponMaxCool -= 1
                 upgradeSound.trigger()
                 self.buyCool = 15
             elif keyList["2"] == True and self.buyCool == 0 and playerList[0].points < 4 :
@@ -410,7 +439,7 @@ class menu() :
                 
             if keyList["3"] == True and self.buyCool == 0 and playerList[0].points >= 4 : #Upgrading atk. dmg.
                 playerList[0].points -= 4
-                weap.weaponDmg += 1.5
+                weap.weaponDmg += 0.7
                 upgradeSound.trigger()
                 self.buyCool = 15
             elif keyList["3"] == True and self.buyCool == 0 and playerList[0].points < 4 :
@@ -419,7 +448,7 @@ class menu() :
     
             if keyList["4"] == True and self.buyCool == 0 and playerList[0].points >= 4 : #Upgrading dash dmg.
                 playerList[0].points -= 4
-                playerList[0].dashDmg += 1.5
+                playerList[0].dashDmg += 0.7
                 upgradeSound.trigger()
                 self.buyCool = 15
             elif keyList["4"] == True and self.buyCool == 0 and playerList[0].points < 4 :
@@ -557,7 +586,7 @@ minim = Minim(this)
 #--------------------------------------------------------------------------------------------
 
 def setup() :
-    global fx, mainTheme, menuSelect, upgradeSound, declineSound, shootSound, hurtSoundEne, hurtSoundChar, deathSoundChar, healthBarIn, mV, menuOne, menuTwo, menuThree, menuFour, playerShape, weap
+    global fx, mainTheme, menuSelect, upgradeSound, declineSound, shootSound, hurtSoundEne, hurtSoundChar, deathSoundChar, healthBarIn, mV, menuOne, menuTwo, menuThree, menuFour, playerShape, pointerShape, weap
     size(1000, 720, P2D)
     smooth(4)
     
@@ -576,6 +605,7 @@ def setup() :
     menuThree = loadImage('assets\\textures\\menus\\menuScreenThree.png')
     menuFour = loadImage('assets\\textures\\menus\\menuScreenFour.png')
     playerShape = loadImage('assets\\textures\\char.png')
+    pointerShape = loadImage('assets\\textures\\pointer.png')
     
     ralewayFont = createFont("assets\\fonts\\Raleway-ExtraLight.ttf", 35)
     textFont(ralewayFont)
