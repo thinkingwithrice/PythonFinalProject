@@ -11,7 +11,7 @@ class player() :
         self.hPChar = 4
         self.hurtChar = 0
         self.hurtCoolChar = 60
-        self.points = 20000
+        self.points = 0
         
         self.colourR = 255
         self.colourG = 255
